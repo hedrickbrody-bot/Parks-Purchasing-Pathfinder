@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Parks Pathfinder">
+<title>Parks Purchase Pathfinder — WV State Parks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+--ink:#18211C;
+--spruce:#1E3D30;
+--spruce-deep:#14291F;
+--moss:#3C6B4F;
+--gold:#B97E22;
+--gold-soft:#E2B25A;
+--paper:#F3F5F0;
+--card:#FFFFFF;
+--stone:#67705F;
+--line:#DBE0D5;
+--stop:#9C463A;
+--stop-bg:#F7EAE6;
+--stop-line:#E4C5BD;
+--go:#2F6B45;
+--go-bg:#E7F0E7;
+--go-line:#C5DCC6;
+--info-bg:#EFF1E8;
+--shadow:0 1px 2px rgba(20,41,31,.06),0 8px 24px rgba(20,41,31,.07);
+--shadow-lift:0 2px 4px rgba(20,41,31,.08),0 14px 34px rgba(20,41,31,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;height:100%}
+body{
+font-family:"Public Sans",system-ui,sans-serif;
+background:var(--paper);
+color:var(--ink);
+line-height:1.5;
+-webkit-font-smoothing:antialiased;
+height:100%;
+overflow:hidden;
+}
+
+/* ---------- Layout ---------- */
+.app-container{
+display:flex;flex-direction:column;height:100vh;
+overflow:hidden;
+}
+.app-header{
+background:var(--spruce);
+color:#EAF0E7;
+border-bottom:3px solid var(--gold);
+padding:max(0.75rem, env(safe-area-inset-top)) 1rem;
+flex:0 0 auto;
+z-index:100;
+}
+.header-content{
+display:flex;align-items:center;gap:0.75rem;
+}
+.mark{
+font-family:"Archivo",sans-serif;font-weight:800;letter-spacing:.14em;
+font-size:0.55rem;text-transform:uppercase;line-height:1.2;
+border:1.5px solid var(--gold-soft);color:var(--gold-soft);
+padding:0.25rem 0.4rem;border-radius:3px;white-space:nowrap;
+flex:0 0 auto;
+}
+.app-header h1{
+font-family:"Archivo",sans-serif;font-weight:700;
+font-size:1rem;letter-spacing:-.01em;color:#fff;
+}
+.app-header .sub{
+font-size:0.7rem;color:#B9CCB9;margin-top:0.05rem;
+font-weight:400;
+}
+
+.app-main{
+flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+padding:1rem;padding-bottom:max(1rem, env(safe-area-inset-bottom));
+}
+
+.app-footer{
+border-top:1px solid var(--line);
+padding:0.75rem 1rem;
+background:#fff;
+font-size:0.7rem;color:var(--stone);
+flex:0 0 auto;
+padding-bottom:max(0.75rem, env(safe-area-inset-bottom));
+}
+
+/* ---------- Trail / progress ---------- */
+.trail{
+display:flex;align-items:center;gap:0;margin:0 0 1.5rem;
+padding:0.5rem 0;flex-wrap:nowrap;overflow-x:auto;
+-webkit-overflow-scrolling:touch;
+}
+.node{display:flex;align-items:center;flex:0 0 auto}
+.dot{
+width:24px;height:24px;border-radius:50%;
+border:2px solid var(--line);background:var(--card);
+display:grid;place-items:center;
+font-family:"IBM Plex Mono",monospace;font-size:0.65rem;font-weight:600;
+color:var(--stone);transition:all .35s ease;flex:0 0 auto;
+}
+.dot.done{background:var(--moss);border-color:var(--moss);color:#fff}
+.dot.active{border-color:var(--gold);color:var(--gold);box-shadow:0 0 0 3px rgba(185,126,34,.14)}
+.seg{
+width:28px;height:0;border-top:2px dashed var(--line);
+transition:border-color .35s ease;flex:0 0 auto;
+}
+.seg.done{border-top-color:var(--moss);border-top-style:solid}
+.trail-label{
+font-family:"IBM Plex Mono",monospace;font-size:0.65rem;
+color:var(--stone);text-transform:uppercase;letter-spacing:.08em;
+margin-left:0.5rem;white-space:nowrap;flex:0 0 auto;
+}
+
+/* ---------- Question card ---------- */
+.card{
+background:var(--card);border:1px solid var(--line);border-radius:12px;
+box-shadow:var(--shadow);padding:1.25rem;margin-bottom:1rem;
+}
+.eyebrow{
+font-family:"IBM Plex Mono",monospace;font-size:0.65rem;font-weight:600;
+text-transform:uppercase;letter-spacing:.12em;color:var(--gold);
+margin-bottom:0.4rem;
+}
+.q-title{
+font-family:"Archivo",sans-serif;font-weight:700;font-size:1.25rem;
+line-height:1.2;letter-spacing:-.015em;margin-bottom:0.3rem;color:var(--ink);
+}
+.q-help{font-size:0.85rem;color:var(--stone);margin-bottom:1rem;max-width:54ch}
+
+.options{display:grid;gap:0.6rem}
+.opt{
+width:100%;text-align:left;cursor:pointer;
+background:#FCFDFB;border:1.5px solid var(--line);border-radius:10px;
+padding:0.85rem;display:flex;align-items:center;gap:0.75rem;
+font-family:inherit;font-size:0.95rem;color:var(--ink);
+transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease,background .12s ease;
+-webkit-tap-highlight-color:transparent;
+}
+.opt:active{transform:scale(0.98)}
+.opt:hover{border-color:var(--moss);background:#fff;box-shadow:var(--shadow)}
+.opt:focus-visible{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(185,126,34,.22)}
+.opt .tick{
+width:28px;height:28px;border-radius:7px;flex:0 0 auto;
+background:var(--info-bg);display:grid;place-items:center;
+font-size:1rem;line-height:1;
+}
+.opt .otext{display:flex;flex-direction:column;gap:0.1rem}
+.opt .otext b{font-weight:600;font-size:0.95rem}
+.opt .otext span{font-size:0.78rem;color:var(--stone);font-weight:400}
+
+.backrow{margin-top:1rem;display:flex;justify-content:space-between;align-items:center;gap:0.75rem;flex-wrap:wrap}
+.btn-text{
+background:none;border:none;font-family:inherit;font-size:0.85rem;
+color:var(--stone);cursor:pointer;padding:0.4rem 0.5rem;font-weight:500;
+display:inline-flex;align-items:center;gap:0.25rem;
+-webkit-tap-highlight-color:transparent;
+}
+.btn-text:active{opacity:0.7}
+.btn-text:disabled{opacity:.3;cursor:default}
+
+/* ---------- Result ---------- */
+.result{animation:rise .4s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+.route{
+border-radius:12px;padding:1.1rem;margin-bottom:1rem;
+background:var(--spruce);color:#EAF0E7;box-shadow:var(--shadow-lift);
+border:1px solid var(--spruce-deep);
+}
+.route .rk{
+font-family:"IBM Plex Mono",monospace;font-size:0.65rem;font-weight:600;
+letter-spacing:.12em;text-transform:uppercase;color:var(--gold-soft);
+}
+.route h2{
+font-family:"Archivo",sans-serif;font-weight:700;font-size:1.2rem;
+line-height:1.2;margin:0.25rem 0 0.4rem;color:#fff;letter-spacing:-.015em;
+}
+.route p{font-size:0.9rem;color:#CBD9C9;max-width:60ch;line-height:1.5}
+.route .summary{
+margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid rgba(255,255,255,.16);
+display:flex;flex-wrap:wrap;gap:0.4rem;
+}
+.chip{
+font-family:"IBM Plex Mono",monospace;font-size:0.65rem;font-weight:500;
+background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
+color:#E0EADD;padding:0.2rem 0.5rem;border-radius:20px;
+}
+
+.block{
+background:var(--card);border:1px solid var(--line);border-radius:12px;
+padding:1.1rem;margin-bottom:1rem;box-shadow:var(--shadow);
+}
+.block h3{
+font-family:"Archivo",sans-serif;font-weight:700;font-size:0.95rem;
+letter-spacing:-.01em;display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;
+}
+.block h3 .ic{
+width:24px;height:24px;border-radius:6px;display:grid;place-items:center;
+font-size:0.8rem;flex:0 0 auto;
+}
+.ic-go{background:var(--go-bg);color:var(--go)}
+.ic-doc{background:var(--info-bg);color:var(--spruce)}
+.ic-app{background:#EDEAF6;color:#5A4A8A}
+.ic-flag{background:var(--stop-bg);color:var(--stop)}
+
+ul.checks{list-style:none;display:grid;gap:0}
+ul.checks li{
+display:flex;align-items:flex-start;gap:0.6rem;padding:0.5rem 0;
+border-bottom:1px solid var(--line);
+}
+ul.checks li:last-child{border-bottom:none}
+.box{
+width:18px;height:18px;border:1.5px solid var(--moss);border-radius:5px;
+flex:0 0 auto;margin-top:0.08rem;background:#fff;
+}
+.ci{display:flex;flex-direction:column;gap:0.1rem}
+.ci b{font-weight:600;font-size:0.9rem}
+.ci .form{
+font-family:"IBM Plex Mono",monospace;font-size:0.7rem;color:var(--spruce);
+background:var(--info-bg);padding:0.05rem 0.3rem;border-radius:4px;
+align-self:flex-start;font-weight:500;
+}
+.ci span.note{font-size:0.78rem;color:var(--stone);line-height:1.4}
+.tag-cond{
+font-size:0.6rem;font-family:"IBM Plex Mono",monospace;font-weight:600;
+text-transform:uppercase;letter-spacing:.06em;color:var(--gold);
+border:1px solid var(--gold-soft);border-radius:4px;padding:0.02rem 0.25rem;
+align-self:flex-start;
+}
+
+/* approval chain */
+.chain{display:flex;flex-direction:column;gap:0}
+.step{display:flex;align-items:stretch;gap:0.6rem}
+.step .rail{display:flex;flex-direction:column;align-items:center;flex:0 0 auto}
+.step .rdot{
+width:18px;height:18px;border-radius:50%;background:var(--moss);
+color:#fff;display:grid;place-items:center;font-size:0.55rem;font-weight:700;
+font-family:"IBM Plex Mono",monospace;margin-top:0.08rem;
+}
+.step .rline{width:2px;flex:1;background:var(--line);margin:2px 0}
+.step:last-child .rline{display:none}
+.step .sbody{padding:0.05rem 0 0.75rem}
+.step b{font-weight:600;font-size:0.9rem}
+.step span{display:block;font-size:0.78rem;color:var(--stone)}
+
+/* flags */
+.flag{
+background:var(--stop-bg);border:1px solid var(--stop-line);border-radius:12px;
+padding:0.95rem;margin-bottom:1rem;
+}
+.flag h3{color:var(--stop);font-size:0.95rem}
+.flag ul{list-style:none;display:grid;gap:0.5rem;margin-top:0.2rem}
+.flag li{display:flex;gap:0.5rem;align-items:flex-start;font-size:0.85rem}
+.flag li .b{color:var(--stop);font-weight:700;flex:0 0 auto}
+.flag li b{font-weight:600}
+
+.info-note{
+background:var(--info-bg);border:1px solid var(--line);border-radius:10px;
+padding:0.8rem;font-size:0.8rem;color:var(--stone);margin-bottom:1rem;
+display:flex;gap:0.5rem;align-items:flex-start;line-height:1.5;
+}
+.info-note b{color:var(--ink);font-weight:600}
+
+.actions{display:flex;gap:0.6rem;flex-wrap:wrap;margin:0.5rem 0 0}
+.btn{
+font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;
+border-radius:9px;padding:0.65rem 1rem;border:1.5px solid transparent;
+display:inline-flex;align-items:center;gap:0.4rem;transition:all .12s ease;
+-webkit-tap-highlight-color:transparent;
+min-height:44px;
+}
+.btn-primary{background:var(--spruce);color:#fff;border-color:var(--spruce)}
+.btn-primary:active{background:var(--spruce-deep)}
+.btn-ghost{background:#fff;color:var(--spruce);border-color:var(--line)}
+.btn-ghost:active{border-color:var(--moss)}
+.btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(185,126,34,.3)}
+
+.recap{
+font-family:"IBM Plex Mono",monospace;font-size:0.7rem;color:var(--stone);
+margin:0 0 1rem;display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;
+}
+.recap .rl{
+background:#fff;border:1px solid var(--line);border-radius:20px;
+padding:0.2rem 0.5rem;
+}
+.recap .rl b{color:var(--ink);font-weight:600}
+
+/* ---------- Responsive tweaks ---------- */
+@media (max-width:480px){
+.app-header h1{font-size:0.9rem}
+.q-title{font-size:1.1rem}
+.route h2{font-size:1.05rem}
+.card{padding:1rem}
+.block{padding:1rem}
+.opt{padding:0.75rem}
+.trail-label{display:none}
+}
+
+@media (prefers-reduced-motion:reduce){
+*{animation:none!important;transition:none!important}
+}
+
+/* ---------- Print ---------- */
+@media print{
+body{background:#fff;padding:0}
+.app-header{border-bottom:2px solid #000}
+.trail,.actions,.btn,.btn-text,.backrow,.app-footer{display:none!important}
+.card{display:none}
+.route{background:#fff;color:#000;border:2px solid #000;box-shadow:none}
+.route .rk{color:#000}.route h2{color:#000}.route p{color:#222}
+.chip{color:#000;border-color:#999;background:#f3f3f3}
+.block,.flag,.info-note{box-shadow:none;break-inside:avoid}
+.recap{break-after:avoid}
+}
+</style>
+</head>
+<body>
+<div class="app-container">
+<header class="app-header">
+<div class="header-content">
+<span class="mark">WV State<br>Parks</span>
+<div style="flex:1">
+<h1>Purchase Pathfinder</h1>
+<div class="sub">Quick procurement guide</div>
+</div>
+</div>
+</header>
+
+<main class="app-main">
+<div class="trail" id="trail" aria-hidden="true"></div>
+<div id="stage"></div>
+</main>
+
+<footer class="app-footer">
+<p><b>Info:</b> Built from Parks Procurement Guide, APO/ADO Guidelines, and WV Purchasing Division Handbook. Not a replacement for policy. Verify against current guides. <a href="#" onclick="restartApp(); return false;" style="color:var(--spruce);text-decoration:underline">Start over</a></p>
+</footer>
+</div>
+
+<script>
+/* ===================================================================
+DECISION CONFIG — edit thresholds / docs here as policy changes
+=================================================================== */
+
+const QUESTIONS = [
+{
+id:"type",
+eyebrow:"Step 1 of 4",
+title:"What are you buying?",
+help:"This sets which licenses, insurance, and approvals may apply.",
+options:[
+{v:"commodity", icon:"📦", label:"Commodity", sub:"Supplies, furniture, computers, equipment"},
+{v:"service", icon:"🛠️", label:"Service", sub:"Repairs, maintenance, labor, contractor work"},
+{v:"building", icon:"🏗️", label:"Building repair", sub:"Construction or improvement to a structure"},
+{v:"vehicle", icon:"🚚", label:"Vehicle", sub:"Fleet or surplus vehicle purchase"},
+{v:"ae", icon:"📐", label:"A&E service", sub:"Design, drawings, engineered plans"}
+]
+},
+{
+id:"contract",
+eyebrow:"Step 2 of 4",
+title:"Is it on a statewide contract?",
+help:"If covered by a contract, you must use that vendor.",
+options:[
+{v:"yes", icon:"✅", label:"Yes — on contract", sub:"Fuel, paint, office supplies, etc."},
+{v:"no", icon:"➖", label:"No — open market", sub:"Must be registered vendor"},
+{v:"unsure", icon:"❓", label:"Not sure", sub:"I'll show you how to check"}
+]
+},
+{
+id:"amount",
+eyebrow:"Step 3 of 4",
+title:"How much will it cost?",
+help:"Use the total for same/similar goods over 12 months.",
+options:[
+{v:"a", icon:"$", label:"$5,000 or less", sub:"Small purchase"},
+{v:"b", icon:"$$", label:"$5K–$25K", sub:"Authorization Form"},
+{v:"c", icon:"$$$", label:"$25K–$50K", sub:"Central Office review"},
+{v:"d", icon:"$$$$", label:"$50K+", sub:"Formal solicitation"}
+]
+},
+{
+id:"onsite",
+eyebrow:"Step 4 of 4",
+title:"Will work happen on park property?",
+help:"On-site work requires insurance & licenses.",
+showIf:(s)=>["service","building","ae"].includes(s.type),
+options:[
+{v:"yes", icon:"👷", label:"Yes — contractor on site", sub:"Work at the park"},
+{v:"no", icon:"📨", label:"No — off-site or delivery", sub:"Nobody on grounds"}
+]
+},
+{
+id:"it",
+eyebrow:"Step 4 of 4",
+title:"Is this IT equipment?",
+help:"IT buys need extra approval unless on statewide contract.",
+showIf:(s)=>s.type==="commodity",
+options:[
+{v:"yes", icon:"💻", label:"Yes — IT/computers/network", sub:"Desktops, laptops, servers"},
+{v:"no", icon:"📦", label:"No — general goods", sub:"Not IT-related"}
+]
+}
+];
+
+const TYPE_LABEL={commodity:"Commodity",service:"Service",building:"Building repair",vehicle:"Vehicle",ae:"A&E service"};
+const AMT_LABEL={a:"≤ $5,000",b:"$5K–$25K",c:"$25K–$50K",d:"$50K+"};
+
+/* ---- reusable document definitions ---- */
+const D = {
+authForm:{t:"Parks & Recreation Purchase Authorization Form", form:"$5K–$25K", note:"Signed with manager approval and vendor quote. Upload to ADO/APO app."},
+doc:{t:"DOC Form (purchase authorization)", form:">$50K", note:"For purchases over $50,000."},
+adoCover:{t:"wvOASIS ADO Cover Sheet", form:"Delivery Order", note:"For orders from Statewide & Agency Contracts. Business Office signs it."},
+quote:{t:"Formal vendor quote", note:"Signed/written quote required. Screenshots of verbal bids may stand in temporarily."},
+bids:{t:"Three quotes or verbal bids", note:"Document vendor names, prices, and dates.", cond:true},
+invoice:{t:"Itemized invoice", note:"Original showing line items. WV purchases are tax-exempt."},
+receiving:{t:"Receiving report", note:"Sign and date after inspection."},
+coding:{t:"P-Card Coding Sheet", note:"Includes conflict-of-interest certification."},
+coi:{t:"Non-conflict of interest certification", note:"Confirm no conflict with vendor."},
+tc:{t:"General Terms & Conditions", note:"Vendor agrees to the State's terms."},
+license:{t:"Contractor's license", note:"Current copy if trade/work requires one.", cond:true},
+insurance:{t:"Certificate of Insurance (COI)", note:"Required before on-site work.", cond:true},
+specs:{t:"Specifications, drawings & exhibits", note:"Any plans or drawings with the vendor.", cond:true},
+added:{t:"Added Property Form", form:"Fixed asset", note:"For any item $1,000+ and all computers.", cond:true},
+hospitality:{t:"Hospitality Form", note:"Only if purchase includes hospitality.", cond:true},
+wvot:{t:"WVOT prior approval", note:"Required for IT unless on Statewide Contract IP23."}
+};
+
+const VENDOR_CHECKS=[
+{t:"Vendor registered in wvOASIS", note:"Active in VCUST, no holds, vendor fee current."},
+{t:"Good standing with Secretary of State", note:"Business is active with WV SOS."},
+{t:"Not on SAM.gov debarment list", note:"Check federal exclusions."},
+{t:"Not on State Debarred Vendor List", note:"Confirm WV hasn't debarred them."}
+];
+
+/* ===================================================================
+ENGINE
+=================================================================== */
+function buildResult(s){
+const r={route:{}, chips:[], required:[], applicable:[], approvals:[], flags:[], notes:[], vendorChecks:VENDOR_CHECKS};
+const onContract = s.contract==="yes";
+const isService = ["service","building","ae"].includes(s.type);
+
+r.chips=[TYPE_LABEL[s.type], AMT_LABEL[s.amount], onContract?"On contract":"Open market"];
+
+/* ---------- ROUTE ---------- */
+if(s.contract==="unsure"){
+r.flags.push({h:"Check contract status first",b:"Search the statewide contract list and Parks agency contracts. If covered, use that vendor. If you can't tell, call Parks Purchasing — buying off-contract without a waiver is the most common issue."});
+}
+
+if(onContract){
+r.route={k:"Contracted purchase",h:"Get an Agency Delivery Order (ADO)",p:"This is on a contract, so use the contracted vendor and run it through an ADO. Upload the ADO Cover Sheet and vendor quote to the Parks ADO/APO app."};
+r.required.push(D.adoCover, D.quote);
+r.notes.push("Most contracts need the ADO <b>before</b> you purchase. Check the contract list if unsure.");
+r.notes.push("To buy off-contract instead, get a <b>written waiver from the Purchasing Division</b> first.");
+} else if(s.amount==="a"){
+r.route={k:"Small purchase",h:"Direct buy — pay by P-Card",p:"Not on contract and $5,000 or less: no bidding required. Purchase from a registered vendor and pay by P-Card. Keep paperwork for the P-Card cycle."};
+r.required.push(D.invoice, D.coding, D.receiving);
+} else if(s.amount==="b"){
+r.route={k:"$5,000–$25,000",h:"Purchase Authorization Form → Chief approval",p:"Submit the Parks & Recreation Purchase Authorization Form to the ADO/APO app for Chief of Parks approval <b>before</b> you buy."};
+r.required.push(D.authForm, D.quote, D.bids);
+} else if(s.amount==="c"){
+r.route={k:"$25,000–$50,000",h:"Route to Central Office Procurement",p:"This must go to Central Office Procurement for review. They run market research and set the method. Prepare authorization paperwork now."};
+r.required.push(D.authForm, D.quote);
+r.notes.push("$20K–$50K typically needs a <b>wvOASIS solicitation</b> with specs. Central Office will confirm.");
+} else { /* d */
+r.route={k:"$50,000.01 or more",h:"Central / Purchasing Division — formal solicitation",p:"Over $50K leaves agency authority. It goes to the Purchasing Division for a formal RFQ/RFP/EOI. Use the DOC form instead of the standard authorization."};
+r.required.push(D.doc, D.tc, D.specs);
+r.notes.push("Formal solicitations are competitively bid and advertised. Build the file early.");
+}
+
+/* ---------- APO trigger (open-market only) ---------- */
+if(!onContract && (s.amount==="b"||s.amount==="c")){
+let apo=false, why="";
+if(isService){apo=true; why="a service over $5,000";}
+else if(s.amount==="c"){apo=true; why="a commodity over $15,000";}
+if(apo){
+r.chips.push("APO required");
+r.notes.push("An <b>Agency Purchase Order (APO)</b> is required ("+why+"). Select \"APO\" in the ADO/APO app.");
+} else {
+r.notes.push("No APO if this stays <b>under $15,000</b>. Over $15K (or if you've paid one vendor >$25K in 12 mo) — APO required.");
+}
+}
+
+/* ---------- conflict of interest + T&C ---------- */
+if(s.amount!=="a" || onContract) r.required.push(D.coi);
+if((isService && (s.amount==="b"||s.amount==="c")) ){ r.applicable.push(D.tc); }
+
+/* ---------- on-site contractor ---------- */
+if(isService && s.onsite==="yes"){
+r.applicable.push(D.insurance, D.license);
+if(!r.required.includes(D.tc) && s.amount!=="d") r.applicable.push(D.tc);
+}
+
+/* ---------- specs for service/building if not already ---------- */
+if((s.type==="building") && !r.required.includes(D.specs)) r.applicable.push(D.specs);
+
+/* ---------- A&E competitive-bid rule ---------- */
+if(s.type==="ae"){
+r.flags.push({h:"A&E must be competitively bid",b:"Any Architectural & Engineering work <b>must</b> go through competitive bid — no verbal-bid shortcut. Route through Central Office / Purchasing."});
+}
+if(s.type==="building"){
+r.flags.push({h:"A&E on building repair?",b:"If this repair needs A&E and is <b>over $10,000</b>, it must be competitively bid. Confirm A&E involvement before choosing a vendor."});
+}
+
+/* ---------- IT / WVOT ---------- */
+if(s.type==="commodity" && s.it==="yes"){
+r.applicable.push(D.wvot, D.added);
+if(!onContract){
+r.flags.push({h:"IT off-contract needs a waiver + WVOT sign-off",b:"IT should come from Statewide Contract <b>IP23</b>. To buy elsewhere, get a <b>documented waiver from Purchasing</b> and <b>WVOT approval</b>."});
+}
+}
+
+/* ---------- fixed assets / hospitality ---------- */
+if((s.type==="commodity"||s.type==="vehicle")){
+if(!r.applicable.includes(D.added)) r.applicable.push(D.added);
+}
+r.applicable.push(D.hospitality);
+
+/* ---------- vehicle special path ---------- */
+if(s.type==="vehicle"){
+r.notes.push("No statewide vehicle contract exists. Vehicle buys follow open-market process + a separate Fleet approval chain (Director → Cabinet Secretary → Governor → Fleet). Use the Vehicle Request Form (DOA-FM-059) before you commit.");
+}
+
+/* ---------- approvals ---------- */
+if(!onContract && s.amount==="a"){
+r.approvals.push({n:"1",t:"No pre-approval required",s:"Unless your District Administrator requires it."});
+} else if(s.amount!=="a" || onContract){
+r.approvals.push(
+{n:"1",t:"Superintendent / Asst. Superintendent",s:"Written justification — cost, location, need."},
+{n:"2",t:"District Administrator (DA)",s:"Written approval; returns signed Authorization Form."},
+{n:"3",t:"Agency Purchasing Agent",s:"Business Office processes ADO/APO and confirms docs."},
+{n:"4",t:"Chief of Parks",s:"Final approval on Authorization Form."}
+);
+if(s.amount==="d"||s.amount==="c"){
+r.approvals.push({n:"5",t:"Central Office / Purchasing",s:"Reviews method, runs solicitation, issues award."});
+}
+}
+
+return r;
+}
+
+/* ===================================================================
+UI
+=================================================================== */
+const stage=document.getElementById("stage");
+const trailEl=document.getElementById("trail");
+let answers={};
+let idx=0;
+
+function activeQuestions(){
+return QUESTIONS.filter(q=>!q.showIf || q.showIf(answers));
+}
+
+function renderTrail(){
+const qs=activeQuestions();
+const total=qs.length;
+let html="";
+for(let i=0;i<total;i++){
+const done=i<idx, active=i===idx;
+html+=`<div class="node"><div class="dot ${done?'done':''} ${active?'active':''}">${done?'✓':i+1}</div></div>`;
+if(i<total-1) html+=`<div class="seg ${i<idx?'done':''}"></div>`;
+}
+html+=`<span class="trail-label">${idx<total?'Q'+(idx+1)+'/'+ total:'Result'}</span>`;
+trailEl.innerHTML=html;
+}
+
+function renderQuestion(){
+const qs=activeQuestions();
+if(idx>=qs.length){ return renderResult(); }
+const q=qs[idx];
+renderTrail();
+let opts=q.options.map(o=>`
+<button class="opt" data-v="${o.v}">
+<span class="tick">${o.icon}</span>
+<span class="otext"><b>${o.label}</b><span>${o.sub}</span></span>
+</button>`).join("");
+stage.innerHTML=`
+<div class="card">
+<div class="eyebrow">${q.eyebrow}</div>
+<h2 class="q-title">${q.title}</h2>
+<p class="q-help">${q.help}</p>
+<div class="options">${opts}</div>
+<div class="backrow">
+<button class="btn-text" id="back" ${idx===0?'disabled':''}>← Back</button>
+<button class="btn-text" id="restart">Start over</button>
+</div>
+</div>`;
+stage.querySelectorAll(".opt").forEach(b=>{
+b.addEventListener("click",()=>{
+answers[q.id]=b.dataset.v;
+const stillValid=activeQuestions().map(x=>x.id);
+Object.keys(answers).forEach(k=>{ if(!stillValid.includes(k)) delete answers[k]; });
+idx++;
+renderQuestion();
+window.scrollTo({top:0,behavior:'smooth'});
+});
+});
+document.getElementById("back").addEventListener("click",()=>{ if(idx>0){idx--;renderQuestion();} });
+document.getElementById("restart").addEventListener("click",restartApp);
+}
+
+function docLI(d){
+return `<li>
+<span class="box"></span>
+<span class="ci">
+<b>${d.t}</b>
+${d.form?`<span class="form">${d.form}</span>`:''}
+${d.cond?`<span class="tag-cond">If applicable</span>`:''}
+${d.note?`<span class="note">${d.note}</span>`:''}
+</span>
+</li>`;
+}
+
+function renderResult(){
+idx=activeQuestions().length;
+renderTrail();
+const r=buildResult(answers);
+
+const reqSet=new Set(r.required);
+const applicable=r.applicable.filter(d=>!reqSet.has(d));
+
+const recap=`<div class="recap">
+<span class="rl"><b>${TYPE_LABEL[answers.type]}</b></span>
+<span class="rl">${answers.contract==='yes'?'On contract':answers.contract==='no'?'Open market':'Unsure'}</span>
+<span class="rl">${AMT_LABEL[answers.amount]}</span>
+${answers.onsite?`<span class="rl">On-site: ${answers.onsite==='yes'?'Yes':'No'}</span>`:''}
+${answers.it?`<span class="rl">IT: ${answers.it==='yes'?'Yes':'No'}</span>`:''}
+</div>`;
+
+const route=`<div class="route">
+<div class="rk">${r.route.k}</div>
+<h2>${r.route.h}</h2>
+<p>${r.route.p}</p>
+<div class="summary">${r.chips.map(c=>`<span class="chip">${c}</span>`).join('')}</div>
+</div>`;
+
+const flags=r.flags.length?`<div class="flag">
+<h3>⚠️ Watch-outs</h3>
+<ul>${r.flags.map(f=>`<li><span class="b">▸</span><span><b>${f.h}.</b> ${f.b}</span></li>`).join('')}</ul>
+</div>`:'';
+
+const vendor=`<div class="block">
+<h3><span class="ic ic-go">✓</span>Vendor checks</h3>
+<ul class="checks">${r.vendorChecks.map(docLI).join('')}</ul>
+</div>`;
+
+const required=`<div class="block">
+<h3><span class="ic ic-doc">▤</span>Required paperwork</h3>
+<ul class="checks">${r.required.map(docLI).join('')}</ul>
+</div>`;
+
+const applic=applicable.length?`<div class="block">
+<h3><span class="ic ic-doc">＋</span>Add if it applies</h3>
+<ul class="checks">${applicable.map(docLI).join('')}</ul>
+</div>`:'';
+
+const approvals=r.approvals.length?`<div class="block">
+<h3><span class="ic ic-app">⇣</span>Approval chain</h3>
+<div class="chain">${r.approvals.map(a=>`
+<div class="step">
+<div class="rail"><div class="rdot">${a.n}</div><div class="rline"></div></div>
+<div class="sbody"><b>${a.t}</b><span>${a.s}</span></div>
+</div>`).join('')}</div>
+</div>`;
+
+const notes=r.notes.length?`<div class="info-note"><span>ℹ️</span><span>${r.notes.join('<br><br>')}</span></div>`:'';
+
+stage.innerHTML=`<div class="result">
+${recap}
+${route}
+${flags}
+${vendor}
+${required}
+${applic}
+${approvals}
+${notes}
+<div class="actions">
+<button class="btn btn-ghost" id="back2">← Change answer</button>
+<button class="btn btn-primary" id="restart2">New purchase</button>
+<button class="btn btn-ghost" id="print">⎙ Print</button>
+</div>
+</div>`;
+
+document.getElementById("back2").addEventListener("click",()=>{ idx=activeQuestions().length-1; renderQuestion(); window.scrollTo({top:0,behavior:'smooth'}); });
+document.getElementById("restart2").addEventListener("click",restartApp);
+document.getElementById("print").addEventListener("click",()=>window.print());
+}
+
+function restartApp(){ answers={}; idx=0; renderQuestion(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+renderQuestion();
+</script>
+</body>
+</html>
