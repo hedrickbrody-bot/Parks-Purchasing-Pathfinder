@@ -343,10 +343,6 @@ body{background:#fff;padding:0}
 </div>
 
 <script>
-/* ===================================================================
-DECISION CONFIG — edit thresholds / docs here as policy changes
-=================================================================== */
-
 const QUESTIONS = [
 {
 id:"type",
@@ -411,7 +407,6 @@ options:[
 const TYPE_LABEL={commodity:"Commodity",service:"Service",building:"Building repair",vehicle:"Vehicle",ae:"A&E service"};
 const AMT_LABEL={a:"≤ $5,000",b:"$5K–$25K",c:"$25K–$50K",d:"$50K+"};
 
-/* ---- reusable document definitions ---- */
 const D = {
 authForm:{t:"Parks & Recreation Purchase Authorization Form", form:"$5K–$25K", note:"Signed with manager approval and vendor quote. Upload to ADO/APO app."},
 doc:{t:"DOC Form (purchase authorization)", form:">$50K", note:"For purchases over $50,000."},
@@ -438,9 +433,6 @@ const VENDOR_CHECKS=[
 {t:"Not on State Debarred Vendor List", note:"Confirm WV hasn't debarred them."}
 ];
 
-/* ===================================================================
-ENGINE
-=================================================================== */
 function buildResult(s){
 const r={route:{}, chips:[], required:[], applicable:[], approvals:[], flags:[], notes:[], vendorChecks:VENDOR_CHECKS};
 const onContract = s.contract==="yes";
@@ -448,7 +440,6 @@ const isService = ["service","building","ae"].includes(s.type);
 
 r.chips=[TYPE_LABEL[s.type], AMT_LABEL[s.amount], onContract?"On contract":"Open market"];
 
-/* ---------- ROUTE ---------- */
 if(s.contract==="unsure"){
 r.flags.push({h:"Check contract status first",b:"Search the statewide contract list and Parks agency contracts. If covered, use that vendor. If you can't tell, call Parks Purchasing — buying off-contract without a waiver is the most common issue."});
 }
@@ -468,13 +459,12 @@ r.required.push(D.authForm, D.quote, D.bids);
 r.route={k:"$25,000–$50,000",h:"Route to Central Office Procurement",p:"This must go to Central Office Procurement for review. They run market research and set the method. Prepare authorization paperwork now."};
 r.required.push(D.authForm, D.quote);
 r.notes.push("$20K–$50K typically needs a <b>wvOASIS solicitation</b> with specs. Central Office will confirm.");
-} else { /* d */
+} else {
 r.route={k:"$50,000.01 or more",h:"Central / Purchasing Division — formal solicitation",p:"Over $50K leaves agency authority. It goes to the Purchasing Division for a formal RFQ/RFP/EOI. Use the DOC form instead of the standard authorization."};
 r.required.push(D.doc, D.tc, D.specs);
 r.notes.push("Formal solicitations are competitively bid and advertised. Build the file early.");
 }
 
-/* ---------- APO trigger (open-market only) ---------- */
 if(!onContract && (s.amount==="b"||s.amount==="c")){
 let apo=false, why="";
 if(isService){apo=true; why="a service over $5,000";}
@@ -487,20 +477,16 @@ r.notes.push("No APO if this stays <b>under $15,000</b>. Over $15K (or if you've
 }
 }
 
-/* ---------- conflict of interest + T&C ---------- */
 if(s.amount!=="a" || onContract) r.required.push(D.coi);
 if((isService && (s.amount==="b"||s.amount==="c")) ){ r.applicable.push(D.tc); }
 
-/* ---------- on-site contractor ---------- */
 if(isService && s.onsite==="yes"){
 r.applicable.push(D.insurance, D.license);
 if(!r.required.includes(D.tc) && s.amount!=="d") r.applicable.push(D.tc);
 }
 
-/* ---------- specs for service/building if not already ---------- */
 if((s.type==="building") && !r.required.includes(D.specs)) r.applicable.push(D.specs);
 
-/* ---------- A&E competitive-bid rule ---------- */
 if(s.type==="ae"){
 r.flags.push({h:"A&E must be competitively bid",b:"Any Architectural & Engineering work <b>must</b> go through competitive bid — no verbal-bid shortcut. Route through Central Office / Purchasing."});
 }
@@ -508,7 +494,6 @@ if(s.type==="building"){
 r.flags.push({h:"A&E on building repair?",b:"If this repair needs A&E and is <b>over $10,000</b>, it must be competitively bid. Confirm A&E involvement before choosing a vendor."});
 }
 
-/* ---------- IT / WVOT ---------- */
 if(s.type==="commodity" && s.it==="yes"){
 r.applicable.push(D.wvot, D.added);
 if(!onContract){
@@ -516,18 +501,15 @@ r.flags.push({h:"IT off-contract needs a waiver + WVOT sign-off",b:"IT should co
 }
 }
 
-/* ---------- fixed assets / hospitality ---------- */
 if((s.type==="commodity"||s.type==="vehicle")){
 if(!r.applicable.includes(D.added)) r.applicable.push(D.added);
 }
 r.applicable.push(D.hospitality);
 
-/* ---------- vehicle special path ---------- */
 if(s.type==="vehicle"){
 r.notes.push("No statewide vehicle contract exists. Vehicle buys follow open-market process + a separate Fleet approval chain (Director → Cabinet Secretary → Governor → Fleet). Use the Vehicle Request Form (DOA-FM-059) before you commit.");
 }
 
-/* ---------- approvals ---------- */
 if(!onContract && s.amount==="a"){
 r.approvals.push({n:"1",t:"No pre-approval required",s:"Unless your District Administrator requires it."});
 } else if(s.amount!=="a" || onContract){
@@ -545,9 +527,6 @@ r.approvals.push({n:"5",t:"Central Office / Purchasing",s:"Reviews method, runs 
 return r;
 }
 
-/* ===================================================================
-UI
-=================================================================== */
 const stage=document.getElementById("stage");
 const trailEl=document.getElementById("trail");
 let answers={};
